@@ -1,380 +1,506 @@
-/**
- * UDCF Instrumented Pendulum Rig v2.1
- * Digital Twin for Kinematic Impact Analysis
- * 
- * Copyright (c) 2026 Dr. Clifford Yeboah
- * Lead Research Body: The Yeboah Institute Research
- * Licensed under the MIT License.
- * 
- * Description: A specialized simulator for calculating the Dimensionless 
- * Efficiency Index (η) within the Unified Dimensionless Cutting Framework.
- */
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UDCF Instrumented Pendulum Rig v2.1</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      background: #2563eb;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: #2563eb;
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+    }
+   .pendulum-arm {
+      transform-origin: 400px 50px;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 1, 1);
+    }
+   .material-piece {
+      transition: all 0.3s ease;
+    }
+   .fade-in {
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-8">
+  <div class="max-w-6xl mx-auto">
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+    <!-- HEADER -->
+    <header class="mb-8 flex flex-col md:flex-row md:items-end justify-between border-b border-slate-200 pb-6">
+      <div>
+        <div class="flex items-center gap-2 text-blue-600 font-bold text-sm tracking-widest uppercase mb-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          Kinematic Impact Simulator
+        </div>
+        <h1 class="text-4xl font-extrabold text-slate-900 tracking-tight">
+          UDCF Instrumented Pendulum Rig <span class="text-slate-400 font-light text-2xl">v2.1</span>
+        </h1>
+        <p class="text-slate-500 mt-2 text-lg">
+          Unified Dimensionless Cutting Framework | Digital Twin Analysis
+        </p>
+      </div>
+      <div class="mt-4 md:mt-0 text-right">
+        <p class="text-xs text-slate-400 uppercase font-semibold tracking-wider">Lead Research Body</p>
+        <p class="text-sm font-bold text-slate-800">The Yeboah Institute Research</p>
+      </div>
+    </header>
 
-// --- BUILT-IN SVG ICONS ---
-const IconActivity = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-);
-const IconZap = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-);
-const IconShield = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-);
-const IconPlay = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-);
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-const UDCFRigV2_1 = () => {
-  // --- RIG STATE ---
-  const [mass, setMass] = useState(2.1);
-  const [angle, setAngle] = useState(45);
-  
-  // --- SPECIMEN STATE & UNITS ---
-  const [thickness, setThickness] = useState(2.0);
-  const [tUnit, setTUnit] = useState('mm');
-  
-  const [toughness, setToughness] = useState(5.0);
-  const [tauUnit, setTauUnit] = useState('MPa');
-  
-  const [area, setArea] = useState(10.0);
-  const [aUnit, setAUnit] = useState('mm2');
-
-  // --- RECOVERY STATE ---
-  const [kYType, setKYType] = useState('0.95');
-  const [customKY, setCustomKY] = useState(0.95);
-
-  // --- ANIMATION STATE ---
-  const [isSwinging, setIsSwinging] = useState(false);
-  const [impacted, setImpacted] = useState(false);
-
-  // --- PHYSICS CALCULATIONS ---
-  const L = 1.0; 
-  const g = 9.81;
-  const radians = (angle * Math.PI) / 180;
-  const h_calc = L * (1 - Math.cos(radians));
-  const velocity = Math.sqrt(2 * g * h_calc);
-  const energy = mass * g * h_calc;
-
-  const getThicknessSI = () => {
-    if (tUnit === 'm') return thickness;
-    if (tUnit === 'mm') return thickness * 0.001;
-    if (tUnit === 'um') return thickness * 0.000001;
-    return thickness;
-  };
-
-  const getToughnessSI = () => {
-    if (tauUnit === 'MPa') return toughness * 1000000;
-    if (tauUnit === 'Pa') return toughness;
-    return toughness;
-  };
-
-  const getAreaSI = () => {
-    if (aUnit === 'm2') return area;
-    if (aUnit === 'mm2') return area * 0.000001;
-    if (aUnit === 'um2') return area * 1e-12;
-    return area;
-  };
-
-  const activeKY = kYType === 'custom' ? customKY : parseFloat(kYType);
-  
-  const d_SI = getThicknessSI();
-  const tau_SI = getToughnessSI();
-  const A_SI = getAreaSI();
-  
-  const workSeparation = d_SI * tau_SI * A_SI;
-  const eta = workSeparation > 0 ? (activeKY * energy) / workSeparation : 0;
-  const isSuccessful = eta >= 1.0;
-
-  const handleRelease = () => {
-    setIsSwinging(true);
-    setImpacted(false);
-    setTimeout(() => {
-      setImpacted(true);
-      setTimeout(() => setIsSwinging(false), 1000);
-    }, 600);
-  };
-
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        
-        {/* HEADER */}
-        <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between border-b border-slate-200 pb-6">
-          <div>
-            <div className="flex items-center gap-2 text-blue-600 font-bold text-sm tracking-widest uppercase mb-2">
-              <IconActivity />
-              Kinematic Impact Simulator
+      <!-- LEFT COLUMN: INPUTS -->
+      <div class="lg:col-span-4 space-y-6">
+        <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Rig Configuration
+          </h2>
+          <div class="space-y-6">
+            <div>
+              <div class="flex justify-between mb-2">
+                <label class="text-sm font-semibold text-slate-700">Tool Mass (m)</label>
+                <span class="text-sm font-mono text-blue-600 font-bold" id="mass-display">2.1 kg</span>
+              </div>
+              <input type="range" min="0.5" max="10" step="0.1" value="2.1" id="mass"
+                class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
             </div>
-            <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">
-              UDCF Instrumented Pendulum Rig <span className="text-slate-400 font-light text-2xl">v2.1</span>
-            </h1>
-            <p className="text-slate-500 mt-2 text-lg">
-              Unified Dimensionless Cutting Framework | Digital Twin Analysis
-            </p>
-          </div>
-          <div className="mt-4 md:mt-0 text-right">
-            <p className="text-xs text-slate-400 uppercase font-semibold tracking-wider">Lead Research Body</p>
-            <p className="text-sm font-bold text-slate-800">The Yeboah Institute Research</p>
-          </div>
-        </header>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* LEFT COLUMN: INPUTS */}
-          <div className="lg:col-span-4 space-y-6">
-            <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-              <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6 flex items-center gap-2">
-                <IconZap /> Rig Configuration
-              </h2>
-              <div className="space-y-6">
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <label className="text-sm font-semibold text-slate-700">Tool Mass (m)</label>
-                    <span className="text-sm font-mono text-blue-600 font-bold">{mass} kg</span>
-                  </div>
-                  <input type="range" min="0.5" max="10" step="0.1" value={mass} 
-                    onChange={(e) => setMass(parseFloat(e.target.value))}
-                    className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <label className="text-sm font-semibold text-slate-700">Drop Angle (θ)</label>
-                    <span className="text-sm font-mono text-blue-600 font-bold">{angle}°</span>
-                  </div>
-                  <input type="range" min="0" max="90" step="1" value={angle} 
-                    onChange={(e) => setAngle(parseFloat(e.target.value))}
-                    className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
-                </div>
+            <div>
+              <div class="flex justify-between mb-2">
+                <label class="text-sm font-semibold text-slate-700">Drop Angle (θ)</label>
+                <span class="text-sm font-mono text-blue-600 font-bold" id="angle-display">45°</span>
               </div>
-            </section>
+              <input type="range" min="0" max="90" step="1" value="45" id="angle"
+                class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+            </div>
+          </div>
+        </section>
 
-            <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-              <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6 flex items-center gap-2">
-                <IconShield /> Specimen Properties
-              </h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1 font-bold">Thickness (d)</label>
-                  <div className="flex gap-2">
-                    <input type="number" value={thickness} onChange={(e)=>setThickness(e.target.value)} className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm" />
-                    <select value={tUnit} onChange={(e)=>setTUnit(e.target.value)} className="bg-slate-100 border border-slate-200 rounded text-xs px-2 font-bold">
-                      <option value="m">m</option>
-                      <option value="mm">mm</option>
-                      <option value="um">μm</option>
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1 font-bold">Ultimate Shear Strength (τ<sub>ult</sub>)</label>
-                  <div className="flex gap-2">
-                    <input type="number" value={toughness} onChange={(e)=>setToughness(e.target.value)} className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm" />
-                    <select value={tauUnit} onChange={(e)=>setTauUnit(e.target.value)} className="bg-slate-100 border border-slate-200 rounded text-xs px-2 font-bold">
-                      <option value="MPa">MPa</option>
-                      <option value="Pa">Pa</option>
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1 font-bold">Contact Area (A)</label>
-                  <div className="flex gap-2">
-                    <input type="number" value={area} onChange={(e)=>setArea(e.target.value)} className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm" />
-                    <select value={aUnit} onChange={(e)=>setAUnit(e.target.value)} className="bg-slate-100 border border-slate-200 rounded text-xs px-2 font-bold">
-                      <option value="mm2">mm²</option>
-                      <option value="m2">m²</option>
-                      <option value="um2">μm²</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-              <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                Recovery (k<sub>γ</sub>)
-              </h2>
-              <div className="space-y-3">
-                <select 
-                  value={kYType} 
-                  onChange={(e) => setKYType(e.target.value)}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded text-sm font-semibold outline-none"
-                >
-                  <option value="0.95">0.95 (Standard)</option>
-                  <option value="0.85">0.85 (Fibrous)</option>
-                  <option value="0.70">0.70 (Metallic)</option>
-                  <option value="custom">Custom Value</option>
+        <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Specimen Properties
+          </h2>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs text-slate-500 mb-1 font-bold">Thickness (d)</label>
+              <div class="flex gap-2">
+                <input type="number" value="2.0" id="thickness" class="flex-1 p-2 bg-slate-50 border border-slate-200 rounded focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm">
+                <select id="tUnit" class="bg-slate-100 border border-slate-200 rounded text-xs px-2 font-bold">
+                  <option value="m">m</option>
+                  <option value="mm" selected>mm</option>
+                  <option value="um">μm</option>
                 </select>
-                {kYType === 'custom' && (
-                  <motion.div initial={{opacity:0, y:-10}} animate={{opacity:1, y:0}}>
-                    <input 
-                      type="number" 
-                      step="0.01" 
-                      value={customKY} 
-                      onChange={(e)=>setCustomKY(parseFloat(e.target.value))} 
-                      className="w-full p-2 bg-blue-50 border border-blue-200 rounded font-mono text-sm"
-                      placeholder="Enter kY value..."
-                    />
-                  </motion.div>
-                )}
               </div>
-            </section>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500 mb-1 font-bold">Ultimate Shear Strength (τ<sub>ult</sub>)</label>
+              <div class="flex gap-2">
+                <input type="number" value="5.0" id="toughness" class="flex-1 p-2 bg-slate-50 border border-slate-200 rounded focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm">
+                <select id="tauUnit" class="bg-slate-100 border border-slate-200 rounded text-xs px-2 font-bold">
+                  <option value="MPa" selected>MPa</option>
+                  <option value="Pa">Pa</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500 mb-1 font-bold">Contact Area (A)</label>
+              <div class="flex gap-2">
+                <input type="number" value="10.0" id="area" class="flex-1 p-2 bg-slate-50 border border-slate-200 rounded focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm">
+                <select id="aUnit" class="bg-slate-100 border border-slate-200 rounded text-xs px-2 font-bold">
+                  <option value="mm2" selected>mm²</option>
+                  <option value="m2">m²</option>
+                  <option value="um2">μm²</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </section>
 
-            <button 
-              onClick={handleRelease}
-              disabled={isSwinging}
-              className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${isSwinging ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200'}`}
-            >
-              <IconPlay />
-              Release Pendulum
-            </button>
+        <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+            Recovery (k<sub>γ</sub>)
+          </h2>
+          <div class="space-y-3">
+            <select id="kYType" class="w-full p-2 bg-slate-50 border border-slate-200 rounded text-sm font-semibold outline-none">
+              <option value="0.95" selected>0.95 (Standard)</option>
+              <option value="0.85">0.85 (Fibrous)</option>
+              <option value="0.70">0.70 (Metallic)</option>
+              <option value="custom">Custom Value</option>
+            </select>
+            <div id="customKYWrapper" class="hidden fade-in">
+              <input type="number" step="0.01" value="0.95" id="customKY"
+                class="w-full p-2 bg-blue-50 border border-blue-200 rounded font-mono text-sm"
+                placeholder="Enter kY value...">
+            </div>
+          </div>
+        </section>
+
+        <button id="releaseBtn"
+          class="w-full py-4 rounded-xl font-bold uppercase tracking-widest flex items-center justify-center gap-3 transition-all bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Release Pendulum
+        </button>
+      </div>
+
+      <!-- RIGHT COLUMN: SIMULATOR & RESULTS -->
+      <div class="lg:col-span-8 space-y-6">
+
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative h-96 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:20px_20px]">
+
+          <!-- Equations Overlay -->
+          <div class="absolute top-6 right-6 bg-white/95 backdrop-blur border border-slate-200 p-5 rounded-2xl shadow-sm z-10 space-y-4">
+            <div>
+              <div class="text-[10px] font-bold text-slate-400 uppercase mb-1">Governing Equation</div>
+              <div class="text-base font-serif italic text-slate-800">
+                η = k<sub>γ</sub> <span class="inline-block scale-110 mx-1"> ( </span>
+                <div class="inline-flex flex-col align-middle text-center text-xs">
+                  <span class="border-b border-slate-800">mv²</span>
+                  <span>2dτ<sub>ult</sub>A</span>
+                </div>
+                <span class="inline-block scale-110 mx-1"> ) </span> ≥ 1
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-100">
+              <div class="text-[10px] font-bold text-slate-400 uppercase mb-1">Velocity (v)</div>
+              <div class="text-sm font-serif italic text-slate-700">
+                v = <span class="text-lg">√</span><span class="border-t border-slate-700 pt-0.5">2gL(1 - cosθ)</span>
+              </div>
+            </div>
+
+            <div>
+              <div class="text-[10px] font-bold text-slate-400 uppercase mb-1">Energy (E<sub>k</sub>)</div>
+              <div class="text-sm font-serif italic text-slate-700">
+                E<sub>k</sub> = mgL(1 - cosθ)
+              </div>
+            </div>
           </div>
 
-          {/* RIGHT COLUMN: SIMULATOR & RESULTS */}
-          <div className="lg:col-span-8 space-y-6">
-            
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative h-96 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:20px_20px]">
-              
-              {/* Equations Overlay */}
-              <div className="absolute top-6 right-6 bg-white/95 backdrop-blur border border-slate-200 p-5 rounded-2xl shadow-sm z-10 space-y-4">
-                <div>
-                  <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Governing Equation</div>
-                  <div className="text-base font-serif italic text-slate-800">
-                    η = k<sub>γ</sub> <span className="inline-block scale-110 mx-1"> ( </span> 
-                    <div className="inline-flex flex-col align-middle text-center text-xs">
-                      <span className="border-b border-slate-800">mv²</span>
-                      <span>2dτ<sub>ult</sub>A</span>
-                    </div>
-                    <span className="inline-block scale-110 mx-1"> ) </span> ≥ 1
-                  </div>
-                </div>
-                
-                <div className="pt-2 border-t border-slate-100">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Velocity (v)</div>
-                  <div className="text-sm font-serif italic text-slate-700">
-                    v = <span className="text-lg">√</span><span className="border-t border-slate-700 pt-0.5">2gL(1 - cosθ)</span>
-                  </div>
-                </div>
+          <!-- Lab Labels -->
+          <div class="absolute bottom-6 left-6 text-[10px] font-mono text-slate-400 uppercase space-y-1">
+            <p>Pendulum arm length = 1 metre</p>
+            <p>Drop angle (θ) = <span id="lab-angle">45</span>°</p>
+          </div>
 
-                <div>
-                  <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Energy (E<sub>k</sub>)</div>
-                  <div className="text-sm font-serif italic text-slate-700">
-                    E<sub>k</sub> = mgL(1 - cosθ)
-                  </div>
-                </div>
-              </div>
+          <!-- SVG SCHEMATIC -->
+          <svg viewBox="0 0 800 400" class="w-full h-full">
+            <circle cx="400" cy="50" r="6" fill="#475569" />
+            <text x="415" y="45" class="text-[10px] font-bold fill-slate-400 uppercase">Pivot Arm</text>
 
-              {/* Lab Labels */}
-              <div className="absolute bottom-6 left-6 text-[10px] font-mono text-slate-400 uppercase space-y-1">
-                <p>Pendulum arm length = 1 metre</p>
-                <p>Drop angle (θ) = {angle}°</p>
-              </div>
+            <path d="M 200 50 A 200 200 0 0 0 400 250" fill="none" stroke="#f1f5f9" stroke-dasharray="4 4" />
 
-              {/* SVG SCHEMATIC */}
-              <svg viewBox="0 0 800 400" className="w-full h-full">
-                <circle cx="400" cy="50" r="6" fill="#475569" />
-                <text x="415" y="45" className="text-[10px] font-bold fill-slate-400 uppercase">Pivot Arm</text>
-                
-                <path d="M 200 50 A 200 200 0 0 0 400 250" fill="none" stroke="#f1f5f9" strokeDasharray="4 4" />
+            <!-- Vice Clamp & Base -->
+            <rect x="340" y="320" width="120" height="20" fill="#94a3b8" />
+            <rect x="350" y="280" width="10" height="40" fill="#64748b" />
+            <rect x="440" y="280" width="10" height="40" fill="#64748b" />
 
-                {/* Vice Clamp & Base */}
-                <rect x="340" y="320" width="120" height="20" fill="#94a3b8" />
-                <rect x="350" y="280" width="10" height="40" fill="#64748b" />
-                <rect x="440" y="280" width="10" height="40" fill="#64748b" />
-                
-                <text x="460" y="305" className="text-[10px] font-bold fill-slate-400 uppercase">Vice Clamp</text>
-                <text x="400" y="360" textAnchor="middle" className="text-[10px] font-bold fill-slate-400 uppercase tracking-widest">Impact Zone</text>
+            <text x="460" y="305" class="text-[10px] font-bold fill-slate-400 uppercase">Vice Clamp</text>
+            <text x="400" y="360" text-anchor="middle" class="text-[10px] font-bold fill-slate-400 uppercase tracking-widest">Impact Zone</text>
 
-                {/* Material Sample */}
-                <AnimatePresence>
-                  {(!impacted || !isSuccessful) ? (
-                    <motion.rect 
-                      x="385" y="260" width="30" height="60" 
-                      fill={isSuccessful ? "#10b981" : "#f59e0b"} 
-                      fillOpacity="0.2" stroke={isSuccessful ? "#10b981" : "#f59e0b"} strokeWidth="2"
-                    />
-                  ) : (
-                    <g>
-                      <motion.rect initial={{x:0}} animate={{x:-15, y:10, rotate:-15}} x="385" y="260" width="15" height="60" fill="#10b981" fillOpacity="0.2" stroke="#10b981" />
-                      <motion.rect initial={{x:0}} animate={{x:15, y:10, rotate:15}} x="400" y="260" width="15" height="60" fill="#10b981" fillOpacity="0.2" stroke="#10b981" />
-                    </g>
-                  )}
-                </AnimatePresence>
-                <text x="400" y="250" textAnchor="middle" className="text-[10px] font-bold fill-slate-500 uppercase">Material Sample</text>
+            <!-- Material Sample -->
+            <g id="material">
+              <rect id="material-whole" x="385" y="260" width="30" height="60" fill="#f59e0b" fill-opacity="0.2" stroke="#f59e0b" stroke-width="2" />
+              <rect id="material-left" x="385" y="260" width="15" height="60" fill="#10b981" fill-opacity="0.2" stroke="#10b981" class="hidden material-piece" />
+              <rect id="material-right" x="400" y="260" width="15" height="60" fill="#10b981" fill-opacity="0.2" stroke="#10b981" class="hidden material-piece" />
+            </g>
+            <text x="400" y="250" text-anchor="middle" class="text-[10px] font-bold fill-slate-500 uppercase">Material Sample</text>
 
-                {/* Pendulum Arm */}
-                <motion.g
-                  initial={false}
-                  animate={isSwinging ? { rotate: [angle, 0, isSuccessful ? -20 : angle/2] } : { rotate: angle }}
-                  transition={{ duration: 0.6, ease: "easeIn" }}
-                  style={{ originX: "400px", originY: "50px" }}
-                >
-                  <line x1="400" y1="50" x2="400" y2="250" stroke="#1e293b" strokeWidth="4" />
-                  <rect x="370" y="250" width="60" height="40" rx="4" fill="#1e293b" />
-                  <text x="400" y="275" textAnchor="middle" fill="white" className="text-xs font-bold font-mono">m</text>
-                </motion.g>
-              </svg>
-            </div>
+            <!-- Pendulum Arm -->
+            <g id="pendulum" class="pendulum-arm" style="transform: rotate(45deg);">
+              <line x1="400" y1="50" x2="400" y2="250" stroke="#1e293b" stroke-width="4" />
+              <rect x="370" y="250" width="60" height="40" rx="4" fill="#1e293b" />
+              <text x="400" y="275" text-anchor="middle" fill="white" class="text-xs font-bold font-mono">m</text>
+            </g>
+          </svg>
+        </div>
 
-            {/* RESULTS PANEL */}
-            <div className={`p-8 rounded-3xl transition-all duration-500 border-2 ${isSuccessful ? 'bg-emerald-900 border-emerald-400 text-white shadow-xl shadow-emerald-900/20' : 'bg-slate-900 border-slate-700 text-white shadow-xl shadow-slate-900/20'}`}>
-              <div className="flex justify-between items-start mb-8">
-                <div>
-                  <h2 className={`${isSuccessful ? 'text-emerald-400' : 'text-slate-400'} text-xs font-bold uppercase tracking-widest mb-1`}>Dimensionless Efficiency Index</h2>
-                  <div className="text-7xl font-black font-mono tracking-tighter">
-                    η = {eta.toFixed(3)}
-                  </div>
-                </div>
-                <div className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest border ${isSuccessful ? 'bg-emerald-800 border-emerald-500 text-emerald-200' : 'bg-slate-800 border-slate-600 text-slate-400'}`}>
-                  {isSuccessful ? 'Severance Confirmed' : 'Sub-Critical Impact'}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-white/10 pt-8">
-                <div>
-                  <p className="text-white/50 text-xs uppercase font-bold mb-1 tracking-wider">Kinetic Energy (Eₖ)</p>
-                  <p className="text-2xl font-mono font-bold">{energy.toFixed(2)} J</p>
-                </div>
-                <div>
-                  <p className="text-white/50 text-xs uppercase font-bold mb-1 tracking-wider">Impact Velocity (v)</p>
-                  <p className="text-2xl font-mono font-bold">{velocity.toFixed(2)} m/s</p>
-                </div>
-                <div>
-                  <p className="text-white/50 text-xs uppercase font-bold mb-1 tracking-wider">Recovery (kᵧ)</p>
-                  <p className="text-2xl font-mono font-bold">{activeKY}</p>
-                </div>
+        <!-- RESULTS PANEL -->
+        <div id="results-panel" class="p-8 rounded-3xl transition-all duration-500 border-2 bg-slate-900 border-slate-700 text-white shadow-xl shadow-slate-900/20">
+          <div class="flex justify-between items-start mb-8">
+            <div>
+              <h2 id="result-title" class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Dimensionless Efficiency Index</h2>
+              <div class="text-7xl font-black font-mono tracking-tighter" id="eta-value">
+                η = 0.000
               </div>
             </div>
+            <div id="status-badge" class="px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest border bg-slate-800 border-slate-600 text-slate-400">
+              Sub-Critical Impact
+            </div>
+          </div>
 
-            {/* ANALYSIS SUMMARY */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-              <h3 className="text-slate-900 font-bold mb-4 flex items-center gap-2">
-                <IconActivity />
-                Rig Analysis Summary
-              </h3>
-              <p className="text-slate-600 text-sm leading-relaxed mb-4 italic">
-                The UDCF Rig simulation indicates a recovery factor (kᵧ) of <span className="font-bold text-slate-900">{activeKY}</span>. 
-                {isSuccessful 
-                  ? ` The rig has achieved the severance threshold. The energy density is sufficient to overcome material lattice resistance (η > 1).`
-                  : ` The rig is currently in the sub-critical regime. Energy is being lost to elastic recoil rather than effective cutting.`
-                }
-              </p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-white/10 pt-8">
+            <div>
+              <p class="text-white/50 text-xs uppercase font-bold mb-1 tracking-wider">Kinetic Energy (Eₖ)</p>
+              <p class="text-2xl font-mono font-bold" id="energy-display">0.00 J</p>
+            </div>
+            <div>
+              <p class="text-white/50 text-xs uppercase font-bold mb-1 tracking-wider">Impact Velocity (v)</p>
+              <p class="text-2xl font-mono font-bold" id="velocity-display">0.00 m/s</p>
+            </div>
+            <div>
+              <p class="text-white/50 text-xs uppercase font-bold mb-1 tracking-wider">Recovery (kᵧ)</p>
+              <p class="text-2xl font-mono font-bold" id="ky-display">0.95</p>
             </div>
           </div>
         </div>
 
-        <footer className="mt-12 border-t border-slate-200 pt-8 text-center">
-          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">
-            © 2026 The Yeboah Institute Research | Dr. Clifford Yeboah
+        <!-- ANALYSIS SUMMARY -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h3 class="text-slate-900 font-bold mb-4 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            Rig Analysis Summary
+          </h3>
+          <p class="text-slate-600 text-sm leading-relaxed mb-4 italic" id="analysis-text">
+            The UDCF Rig simulation indicates a recovery factor (kᵧ) of <span class="font-bold text-slate-900">0.95</span>.
+            The rig is currently in the sub-critical regime. Energy is being lost to elastic recoil rather than effective cutting.
           </p>
-          <p className="text-slate-300 text-[8px] mt-2 uppercase">
-            Licensed under MIT Open Source
-          </p>
-        </footer>
+        </div>
       </div>
     </div>
-  );
+
+    <footer class="mt-12 border-t border-slate-200 pt-8 text-center">
+      <p class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">
+        © 2026 The Yeboah Institute Research | Dr. Clifford Yeboah
+      </p>
+      <p class="text-slate-300 text-[8px] mt-2 uppercase">
+        Licensed under MIT Open Source
+      </p>
+    </footer>
+  </div>
+
+<script>
+// --- STATE ---
+let state = {
+  mass: 2.1,
+  angle: 45,
+  thickness: 2.0,
+  tUnit: 'mm',
+  toughness: 5.0,
+  tauUnit: 'MPa',
+  area: 10.0,
+  aUnit: 'mm2',
+  kYType: '0.95',
+  customKY: 0.95,
+  isSwinging: false,
+  impacted: false
 };
 
-export default UDCFRigV2_1;
+// --- CONSTANTS ---
+const L = 1.0;
+const g = 9.81;
+
+// --- UNIT CONVERSIONS ---
+const getThicknessSI = () => {
+  if (state.tUnit === 'm') return state.thickness;
+  if (state.tUnit === 'mm') return state.thickness * 0.001;
+  if (state.tUnit === 'um') return state.thickness * 0.000001;
+  return state.thickness;
+};
+
+const getToughnessSI = () => {
+  if (state.tauUnit === 'MPa') return state.toughness * 1000000;
+  if (state.tauUnit === 'Pa') return state.toughness;
+  return state.toughness;
+};
+
+const getAreaSI = () => {
+  if (state.aUnit === 'm2') return state.area;
+  if (state.aUnit === 'mm2') return state.area * 0.000001;
+  if (state.aUnit === 'um2') return state.area * 1e-12;
+  return state.area;
+};
+
+// --- CALCULATIONS ---
+function calculate() {
+  const radians = (state.angle * Math.PI) / 180;
+  const h = L * (1 - Math.cos(radians));
+  const velocity = Math.sqrt(2 * g * h);
+  const energy = state.mass * g * h;
+
+  const activeKY = state.kYType === 'custom'? state.customKY : parseFloat(state.kYType);
+  const d_SI = getThicknessSI();
+  const tau_SI = getToughnessSI();
+  const A_SI = getAreaSI();
+
+  const workSeparation = d_SI * tau_SI * A_SI;
+  const eta = workSeparation > 0? (activeKY * energy) / workSeparation : 0;
+  const isSuccessful = eta >= 1.0;
+
+  return { velocity, energy, eta, isSuccessful, activeKY };
+}
+
+// --- UPDATE UI ---
+function update() {
+  const { velocity, energy, eta, isSuccessful, activeKY } = calculate();
+
+  // Update displays
+  document.getElementById('mass-display').textContent = state.mass + ' kg';
+  document.getElementById('angle-display').textContent = state.angle + '°';
+  document.getElementById('lab-angle').textContent = state.angle;
+  document.getElementById('eta-value').textContent = 'η = ' + eta.toFixed(3);
+  document.getElementById('energy-display').textContent = energy.toFixed(2) + ' J';
+  document.getElementById('velocity-display').textContent = velocity.toFixed(2) + ' m/s';
+  document.getElementById('ky-display').textContent = activeKY;
+
+  // Update pendulum angle
+  document.getElementById('pendulum').style.transform = `rotate(${state.angle}deg)`;
+
+  // Update results panel
+  const panel = document.getElementById('results-panel');
+  const title = document.getElementById('result-title');
+  const badge = document.getElementById('status-badge');
+  const materialWhole = document.getElementById('material-whole');
+
+  if (isSuccessful) {
+    panel.className = 'p-8 rounded-3xl transition-all duration-500 border-2 bg-emerald-900 border-emerald-400 text-white shadow-xl shadow-emerald-900/20';
+    title.className = 'text-emerald-400 text-xs font-bold uppercase tracking-widest mb-1';
+    badge.className = 'px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest border bg-emerald-800 border-emerald-500 text-emerald-200';
+    badge.textContent = 'Severance Confirmed';
+    materialWhole.setAttribute('fill', '#10b981');
+    materialWhole.setAttribute('stroke', '#10b981');
+  } else {
+    panel.className = 'p-8 rounded-3xl transition-all duration-500 border-2 bg-slate-900 border-slate-700 text-white shadow-xl shadow-slate-900/20';
+    title.className = 'text-slate-400 text-xs font-bold uppercase tracking-widest mb-1';
+    badge.className = 'px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest border bg-slate-800 border-slate-600 text-slate-400';
+    badge.textContent = 'Sub-Critical Impact';
+    materialWhole.setAttribute('fill', '#f59e0b');
+    materialWhole.setAttribute('stroke', '#f59e0b');
+  }
+
+  // Update analysis text
+  document.getElementById('analysis-text').innerHTML = `
+    The UDCF Rig simulation indicates a recovery factor (kᵧ) of <span class="font-bold text-slate-900">${activeKY}</span>.
+    ${isSuccessful
+     ? `The rig has achieved the severance threshold. The energy density is sufficient to overcome material lattice resistance (η > 1).`
+      : `The rig is currently in the sub-critical regime. Energy is being lost to elastic recoil rather than effective cutting.`
+    }
+  `;
+}
+
+// --- ANIMATION ---
+function handleRelease() {
+  if (state.isSwinging) return;
+
+  state.isSwinging = true;
+  state.impacted = false;
+
+  const { isSuccessful } = calculate();
+  const pendulum = document.getElementById('pendulum');
+  const releaseBtn = document.getElementById('releaseBtn');
+
+  releaseBtn.disabled = true;
+  releaseBtn.classList.add('bg-slate-200', 'text-slate-400', 'cursor-not-allowed');
+  releaseBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700', 'text-white');
+
+  // Swing animation
+  pendulum.style.transform = 'rotate(0deg)';
+
+  setTimeout(() => {
+    state.impacted = true;
+
+    // Handle material break
+    if (isSuccessful) {
+      document.getElementById('material-whole').classList.add('hidden');
+      document.getElementById('material-left').classList.remove('hidden');
+      document.getElementById('material-right').classList.remove('hidden');
+      document.getElementById('material-left').style.transform = 'translate(-15px, 10px) rotate(-15deg)';
+      document.getElementById('material-right').style.transform = 'translate(15px, 10px) rotate(15deg)';
+      pendulum.style.transform = 'rotate(-20deg)';
+    } else {
+      pendulum.style.transform = `rotate(${state.angle/2}deg)`;
+    }
+
+    setTimeout(() => {
+      state.isSwinging = false;
+      pendulum.style.transform = `rotate(${state.angle}deg)`;
+      releaseBtn.disabled = false;
+      releaseBtn.classList.remove('bg-slate-200', 'text-slate-400', 'cursor-not-allowed');
+      releaseBtn.classList.add('bg-blue-600', 'hover:bg-blue-700', 'text-white');
+
+      // Reset material
+      setTimeout(() => {
+        document.getElementById('material-whole').classList.remove('hidden');
+        document.getElementById('material-left').classList.add('hidden');
+        document.getElementById('material-right').classList.add('hidden');
+        document.getElementById('material-left').style.transform = '';
+        document.getElementById('material-right').style.transform = '';
+      }, 500);
+    }, 1000);
+  }, 600);
+}
+
+// --- EVENT LISTENERS ---
+document.getElementById('mass').addEventListener('input', (e) => {
+  state.mass = parseFloat(e.target.value);
+  update();
+});
+
+document.getElementById('angle').addEventListener('input', (e) => {
+  state.angle = parseFloat(e.target.value);
+  update();
+});
+
+document.getElementById('thickness').addEventListener('input', (e) => {
+  state.thickness = parseFloat(e.target.value);
+  update();
+});
+
+document.getElementById('tUnit').addEventListener('change', (e) => {
+  state.tUnit = e.target.value;
+  update();
+});
+
+document.getElementById('toughness').addEventListener('input', (e) => {
+  state.toughness = parseFloat(e.target.value);
+  update();
+});
+
+document.getElementById('tauUnit').addEventListener('change', (e) => {
+  state.tauUnit = e.target.value;
+  update();
+});
+
+document.getElementById('area').addEventListener('input', (e) => {
+  state.area = parseFloat(e.target.value);
+  update();
+});
+
+document.getElementById('aUnit').addEventListener('change', (e) => {
+  state.aUnit = e.target.value;
+  update();
+});
+
+document.getElementById('kYType').addEventListener('change', (e) => {
+  state.kYType = e.target.value;
+  document.getElementById('customKYWrapper').classList.toggle('hidden', e.target.value!== 'custom');
+  update();
+});
+
+document.getElementById('customKY').addEventListener('input', (e) => {
+  state.customKY = parseFloat(e.target.value);
+  update();
+});
+
+document.getElementById('releaseBtn').addEventListener('click', handleRelease);
+
+// --- INIT ---
+update();
+</script>
+
+</body>
+</html>
