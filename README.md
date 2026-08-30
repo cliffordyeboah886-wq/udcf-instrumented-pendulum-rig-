@@ -1,4 +1,4 @@
-# UDCF Instrumented Pendulum Rig v3.0
+# UDCF Instrumented Pendulum Cutting Rig v3.0
 
 **Unified Dimensionless Cutting Framework | Digital Twin Analysis**
 
