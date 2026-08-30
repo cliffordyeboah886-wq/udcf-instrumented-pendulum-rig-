@@ -4,7 +4,7 @@
 
 ## Overview
 
-This repository contains the source code for the UDCF Instrumented Pendulum Rig v3.0. This simulator serves as a Digital Twin, allowing researchers to predict severance success ($$\eta \ge 1$$) or sub-critical impact based on the kinematic energy of a swinging pendulum. Version 3.0 introduces rigorous physical calibration and enhanced data tracking capabilities.
+This repository contains the source code for the UDCF Instrumented Pendulum Cutting Rig v3.0. This simulator serves as a Digital Twin, allowing researchers to predict severance success ($$\eta \ge 1$$) or sub-critical impact based on the kinematic energy of a swinging pendulum. Version 3.0 introduces rigorous physical calibration and enhanced data tracking capabilities.
 
 ## Key Features
 
@@ -58,6 +58,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Citation
 
-If this Digital Twin is utilized in academic research, please cite it as:
+If this Digital Twin is utilised in academic research, please cite it as:
 
-> Yeboah, C. (2026). UDCF Instrumented Pendulum Rig v3.0 [Software]. The Yeboah Institute Research.
+> Yeboah, C. (2026). UDCF Instrumented Pendulum Cutting Rig v3.0 [Software]. The Yeboah Institute Research.
