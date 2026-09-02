@@ -308,7 +308,7 @@
             // Index Formula: ky * (mv^2 / 2dτA)
             const eta = workRequired > 0 ? ky * ( (m * v * v) / (2 * d * tau * A) ) : 0;
 
-            const vc = (workRequired > 0 && m > 0) ? Math.sqrt((2 * workRequired) / m) : 0;
+            const vc = (workRequired > 0 && m > 0 && ky > 0) ? Math.sqrt((2 * workRequired) / (m * ky)) : 0;
 
             const remainE = eta >= 1 ? Math.max(0, netE - workRequired) : 0;
             const h2 = remainE / (m * g);
