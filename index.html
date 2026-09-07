@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,7 +25,6 @@
         /* DYNAMIC PIVOT SYSTEM */
         #pendulum-group {
             transform-origin: 200px 80px; 
-            /* Transition timing handled via JS for fluid motion */
         }
 
         .severed-flyaway {
@@ -77,19 +76,20 @@
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                     <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">Rig Setup</h3>
                     <div class="space-y-6">
-                        <!-- Tool Mass with Unit Dropdown -->
+                        <!-- Tool Mass with Unit Dropdown - Updated to 15.0 kg -->
                         <div>
                             <div class="flex justify-between mb-2 text-sm font-semibold">
                                 <label>Tool Mass (m)</label>
                             </div>
                             <div class="flex gap-2">
-                                <input type="number" id="input-mass" value="15.4" step="0.001" class="flex-1 p-2 border rounded font-mono text-blue-600">
+                                <input type="number" id="input-mass" value="15.0" step="0.001" class="flex-1 p-2 border rounded font-mono text-blue-600">
                                 <select id="unit-mass" class="bg-slate-100 border rounded px-3 font-bold text-xs outline-none">
                                     <option value="kg">kg</option>
                                     <option value="g">g</option>
                                     <option value="mg">mg</option>
                                 </select>
                             </div>
+                            <p class="text-[9px] text-slate-400 mt-1 italic">Standardised nominal mass: 15.0 kg</p>
                         </div>
                         <div>
                             <div class="flex justify-between mb-2 text-sm font-semibold">
@@ -165,7 +165,7 @@
             <div class="lg:col-span-8 space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
-                    <!-- SVG Visualizer -->
+                    <!-- SVG Visualiser -->
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
                         <svg viewBox="0 0 400 400" class="w-full h-full">
                             <rect x="196" y="0" width="8" height="80" fill="#e2e8f0" />
@@ -296,13 +296,12 @@
 
             const L = 1.2;
             const g = 9.80665;
-            const loss = 0.45;
+            const loss = 0.45; // Energy loss in Joules (modelled friction/drag)
 
             const rad = (theta * Math.PI) / 180;
             const netE = Math.max(0, (m * g * L * (1 - Math.cos(rad))) - loss);
             const v = m > 0 ? Math.sqrt((2 * netE) / m) : 0;
             
-            const kineticEnergy = 0.5 * m * (v * v);
             const workRequired = d * tau * A; 
             
             // Index Formula: ky * (mv^2 / 2dτA)
@@ -344,22 +343,22 @@
         function downloadReport() {
             const data = calculatePhysics();
             const now = new Date();
-            const timestamp = now.toLocaleString();
+            const timestamp = now.toLocaleString('en-GB');
             
-            const report = `udcf-IPCR REPORT v3.1
+            const report = `UDCF-IPCR RESEARCH REPORT v3.1
 Timestamp: ${timestamp}
 ---------------------------------------
-Recovery factor (kY): ${data.si.ky.toFixed(2)}
+Recovery Factor (kY): ${data.si.ky.toFixed(2)}
 Effective Energy (E_eff): ${data.netE.toExponential(4)} J
-Resistance (W_s): ${data.si.Ws.toExponential(4)} J
+Resistance Work (W_s): ${data.si.Ws.toExponential(4)} J
 Predictive Separation Index (η): ${data.eta.toFixed(4)}
 ---------------------------------------
 SI VECTOR ANALYSIS:
 Mass: ${data.si.m.toExponential(4)} kg
-Velocity: ${data.si.v.toFixed(4)} m/s
-Thickness: ${data.si.d.toExponential(4)} m
-Toughness: ${data.si.tau.toExponential(4)} Pa
-Area: ${data.si.A.toExponential(4)} m2
+Impact Velocity: ${data.si.v.toFixed(4)} m/s
+Material Thickness: ${data.si.d.toExponential(4)} m
+Shear Strength: ${data.si.tau.toExponential(4)} Pa
+Contact Area: ${data.si.A.toExponential(4)} m2
 ---------------------------------------
 The Yeboah Institute Research Ghana`;
 
@@ -367,7 +366,7 @@ The Yeboah Institute Research Ghana`;
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `IPCR_Report_v3_${now.getTime()}.txt`;
+            a.download = `IPCR_Report_v3_1_${now.getTime()}.txt`;
             a.click();
             window.URL.revokeObjectURL(url);
         }
@@ -381,16 +380,13 @@ The Yeboah Institute Research Ghana`;
             const data = calculatePhysics();
             
             // FLUID MOTION SWING
-            // We calculate the swing duration based on the release angle
-            const swingDuration = 1.2; // Fixed duration for consistent visual feel
+            const swingDuration = 1.2; 
             pendulum.style.transition = `transform ${swingDuration}s cubic-bezier(0.4, 0, 0.2, 1)`;
             
-            // Set target angle (followAngle or small rebound)
             const targetAngle = data.isSevered ? data.followAngle : 10;
             pendulum.style.transform = `rotate(${targetAngle}deg)`;
 
             // Trigger specimen flyaway exactly when passing 0 degrees
-            // (Roughly halfway through the swing duration)
             setTimeout(() => {
                 if (data.isSevered) {
                     specimen.classList.add('severed-flyaway');
