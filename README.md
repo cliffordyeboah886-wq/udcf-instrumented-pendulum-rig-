@@ -37,7 +37,7 @@ $$
 
 Where:
 *   k<sub>Y</sub> = Recovery Factor
-*   m = Tool Mass (Standard: 15.0 kg)
+*   m = Tool Mass (Standard: 10.0 kg)
 *   v = Impact Velocity
 *   v<sub>c</sub> = Critical Velocity
 *   d = Specimen Thickness
